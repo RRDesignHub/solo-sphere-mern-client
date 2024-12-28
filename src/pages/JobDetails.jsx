@@ -5,12 +5,12 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { useNavigate, useParams } from "react-router-dom";
 import { AuthContext } from "../providers/AuthProvider";
-import {toast} from 'react-hot-toast';
+import { toast } from "react-hot-toast";
 
 const JobDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const {user} = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const [startDate, setStartDate] = useState(new Date());
   const [jobDetails, setJobDetails] = useState({});
   useEffect(() => {
@@ -33,9 +33,8 @@ const JobDetails = () => {
     bid_count,
   } = jobDetails;
 
-
   // handle submit bid for job:
-  const handleBidTheJob =e =>{
+  const handleBidTheJob = async (e) => {
     e.preventDefault();
 
     const form = e.target;
@@ -44,34 +43,51 @@ const JobDetails = () => {
     const bidderComment = form.comment.value;
     const jobId = _id;
     // deadline validation:
-    if(compareAsc(new Date(), new Date(deadline)) === 1){
+    if (compareAsc(new Date(), new Date(deadline)) === 1) {
       return toast.error("Deadline crossed, Bidding forbiden");
     }
 
     // validation for job publisher can't bid for the job:
-    if(buyer.email === user?.email){
+    if (buyer.email === user?.email) {
       return toast.error("Publisher can't bid for his published job!!!");
-    } 
+    }
     // deadline validation:
-    if(compareAsc(new Date(startDate), new Date(deadline)) === 1){
+    if (compareAsc(new Date(startDate), new Date(deadline)) === 1) {
       return toast.error("Offer within deadline!!!");
     }
     // price validation for crossing max price:
-    if(bidPrice > maxPrice){
-      return toast.error('Bid for less or equal price of the job!!!')
+    if (bidPrice > maxPrice) {
+      return toast.error("Bid for less or equal price of the job!!!");
     }
 
-    const bidData = {bidPrice, bidderEmail, biddingDate:startDate, bidderComment, jobId}
-    
-    try{
-      axios.post(`${import.meta.env.VITE_API}/addBid`, bidData)
+    const bidData = {
+      jobTitle,
+      biddingDate: startDate,
+      bidPrice,
+      jobCategory,
+      status: "Pending",
+      bidderEmail,
+      bidderName: user?.displayName,
+      buyerEmail: buyer?.email ,
+      bidderComment,
+      jobId,
+    };
+
+    try {
+      await axios.post(`${import.meta.env.VITE_API}/addBid`, bidData);
       form.reset();
-      toast.success('Successfully bid for the Job!')
-      navigate('/my-bids')
-    }catch(err){
-      toast.error(err);
+      toast.success("Successfully bid for the Job!");
+      navigate("/my-bids");
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        // Show the error message returned from the server
+        toast.error(err.response.data.message);
+      } else {
+        // Handle unexpected errors
+        toast.error("An unexpected error occurred. Please try again.");
+      }
     }
-  }
+  };
 
   return (
     <div className="flex flex-col md:flex-row justify-around gap-5  items-center min-h-[calc(100vh-306px)] md:max-w-screen-xl mx-auto ">
