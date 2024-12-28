@@ -47,8 +47,6 @@ const AddJob = () => {
             navigate('/my-posted-jobs')
           } 
         })
-
-      
     }catch(err){
       toast.error(err.message);
     }
